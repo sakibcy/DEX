@@ -13,11 +13,44 @@ contract Exchange {
     mapping(uint256 => _Order) public orders;
     uint256 public orderCount;
     mapping(uint256 => bool) public orderCancelled;
+    mapping(uint256 => bool) public orderFilled;
 
     event Deposit(address token, address user, uint256 amount, uint256 balance);
-    event Withdraw(address token, address user, uint256 amount, uint256 balance);
-    event Order(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp);
-    event CancelOrder(uint256 id, address user, address tokenGet, uint256 amountGet, address tokenGive, uint256 amountGive, uint256 timestamp);
+    event Withdraw(
+        address token,
+        address user,
+        uint256 amount,
+        uint256 balance
+    );
+    event Order(
+        uint256 id,
+        address user,
+        address tokenGet,
+        uint256 amountGet,
+        address tokenGive,
+        uint256 amountGive,
+        uint256 timestamp
+    );
+    event CancelOrder(
+        uint256 id,
+        address user,
+        address tokenGet,
+        uint256 amountGet,
+        address tokenGive,
+        uint256 amountGive,
+        uint256 timestamp
+    );
+
+    event Trade(
+        uint256 id,
+        address user,
+        address tokenGet,
+        uint256 amountGet,
+        address tokenGive,
+        uint256 amountGive,
+        address creator,
+        uint256 timestamp
+    );
 
     // Way to model the order
     struct _Order {
@@ -39,7 +72,7 @@ contract Exchange {
     function depositToken(address _token, uint256 _amount) public {
         // Transfer token to exchange
         require(Token(_token).transferFrom(msg.sender, address(this), _amount));
-        
+
         // Update user balance
         tokens[_token][msg.sender] = tokens[_token][msg.sender] + _amount;
 
@@ -50,7 +83,7 @@ contract Exchange {
     function withdrawToken(address _token, uint256 _amount) public {
         // Ensure user has enough tokens to withdraw
         require(tokens[_token][msg.sender] >= _amount);
-        
+
         // Transfer tokens to user
         Token(_token).transfer(msg.sender, _amount);
 
@@ -61,18 +94,27 @@ contract Exchange {
         emit Withdraw(_token, msg.sender, _amount, tokens[_token][msg.sender]);
     }
 
-    function balanceOf(address _token, address _user) public view returns(uint256) {
+    function balanceOf(address _token, address _user)
+        public
+        view
+        returns (uint256)
+    {
         return tokens[_token][_user];
     }
 
     // ---------------------
     // Make and Cancle order
-    function makeOrder(address _tokenGet, uint256 _amountGet, address _tokenGive, uint256 _amountGive) public {
+    function makeOrder(
+        address _tokenGet,
+        uint256 _amountGet,
+        address _tokenGive,
+        uint256 _amountGive
+    ) public {
         // Prevents orders if tokens aren't on exchange
         require(balanceOf(_tokenGive, msg.sender) >= _amountGive);
-        
+
         // Create order
-        orderCount = orderCount + 1;
+        orderCount++;
 
         orders[orderCount] = _Order(
             orderCount, // id
@@ -82,10 +124,18 @@ contract Exchange {
             _tokenGive,
             _amountGive,
             block.timestamp
-            );
+        );
 
         // Emit event
-        emit Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, block.timestamp);
+        emit Order(
+            orderCount,
+            msg.sender,
+            _tokenGet,
+            _amountGet,
+            _tokenGive,
+            _amountGive,
+            block.timestamp
+        );
     }
 
     function cancelOrder(uint256 _id) public {
@@ -103,14 +153,87 @@ contract Exchange {
 
         // Emit an event
         emit CancelOrder(
-            _id, 
+            _id,
             msg.sender,
-            _order.tokenGet, 
-            _order.amountGet, 
-            _order.tokenGive, 
-            _order.amountGive, 
+            _order.tokenGet,
+            _order.amountGet,
+            _order.tokenGive,
+            _order.amountGive,
             block.timestamp
         );
     }
 
+    // -------
+    // Executing Orders
+
+    function fillOrder(uint256 _id) public {
+        // Must be valid orderId
+        require(_id > 0 && _id <= orderCount);
+
+        // Order can't be filled
+        require(!orderFilled[_id]);
+
+        // Order can't be cancelled
+        require(!orderCancelled[_id]);
+
+        // Fetch Order
+        _Order storage _order = orders[_id];
+
+        // Execute the trade
+
+        _trade(
+            _order.id,
+            _order.user,
+            _order.tokenGet,
+            _order.amountGet,
+            _order.tokenGive,
+            _order.amountGive
+        );
+
+        // Mark order as filled
+        orderFilled[_order.id] = true;
+    }
+
+    function _trade(
+        uint256 _orderId,
+        address _user,
+        address _tokenGet,
+        uint256 _amountGet,
+        address _tokenGive,
+        uint256 _amountGive
+    ) internal {
+        // trade here
+
+        uint256 _feeAmount = (_amountGet * feePercent) / 100;
+
+        // Getting one token from seller
+        // msg.sender is the user who filled the order, while _user is who created the order
+        tokens[_tokenGet][msg.sender] =
+            tokens[_tokenGet][msg.sender] -
+            (_amountGet + _feeAmount); //
+        tokens[_tokenGet][_user] = tokens[_tokenGet][_user] + _amountGet;
+
+        // Charge fees
+        tokens[_tokenGet][feeAccount] =
+            tokens[_tokenGet][feeAccount] +
+            _feeAmount;
+
+        // Giving another token to seller
+        tokens[_tokenGive][_user] = tokens[_tokenGive][_user] - _amountGive;
+        tokens[_tokenGive][msg.sender] =
+            tokens[_tokenGive][msg.sender] +
+            _amountGive;
+
+        // Emit trade event
+        emit Trade(
+            _orderId,
+            msg.sender,
+            _tokenGet,
+            _amountGet,
+            _tokenGive,
+            _amountGive,
+            _user,
+            block.timestamp
+        );
+    }
 }
