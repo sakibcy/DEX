@@ -16,7 +16,7 @@ async function main() {
   // Deploy contact
   const Sakib = await Token.deploy("Sakib", "SAK", "1000000");
   await Sakib.deployed();
-  console.log(`SAK Deployed to: ${Sakib.address}`);
+  console.log(`Sakib Deployed to: ${Sakib.address}`);
 
   const Omar = await Token.deploy("Omar", "OM", "1000000");
   await Omar.deployed();
