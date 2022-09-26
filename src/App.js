@@ -4,24 +4,33 @@ import "./App.css";
 import { useDispatch } from "react-redux";
 import {
   loadAccount,
+  loadExchange,
   loadNetwork,
   loadProvider,
-  loadToken,
+  loadTokens,
 } from "./store/interactions";
 
 function App() {
   const dispatch = useDispatch();
 
   const loadBlockchainData = async () => {
-    await loadAccount(dispatch);
-
     // connect ethers to blockchain
     const provider = loadProvider(dispatch);
 
+    // Fetch current network's chainId (e.g. hardhat: 31337, kovan: 42)
     const chainId = await loadNetwork(provider, dispatch);
 
-    // Token smart contract
-    await loadToken(provider, config[chainId].Sakib.address, dispatch);
+    // Fetch current account & balance from Metamask
+    await loadAccount(provider, dispatch);
+
+    // Load Token smart contract
+    const Sakib = config[chainId].Sakib;
+    const Omar = config[chainId].Omar;
+    await loadTokens(provider, [Sakib.address, Omar.address], dispatch);
+
+    // Load Exchange Smart Contract
+    const Exchange = config[chainId].Exchange;
+    await loadExchange(provider, Exchange.address, dispatch);
   };
 
   useEffect(() => {
