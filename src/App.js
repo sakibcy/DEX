@@ -8,9 +8,11 @@ import {
   loadNetwork,
   loadProvider,
   loadTokens,
+  subscribeToEvents,
 } from "./store/interactions";
 import Navbar from "./components/Navbar";
 import Markets from "./components/Markets";
+import Balance from "./components/Balance";
 
 function App() {
   const dispatch = useDispatch();
@@ -39,7 +41,10 @@ function App() {
 
     // Load Exchange Smart Contract
     const Exchange = config[chainId].Exchange;
-    await loadExchange(provider, Exchange.address, dispatch);
+    const exchange = await loadExchange(provider, Exchange.address, dispatch);
+
+    // Listen to events
+    subscribeToEvents(exchange, dispatch);
   };
 
   useEffect(() => {
@@ -54,7 +59,7 @@ function App() {
         <section className="exchange__section--left grid">
           <Markets />
 
-          {/* Balance */}
+          <Balance />
 
           {/* Order */}
         </section>
