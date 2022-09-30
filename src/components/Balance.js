@@ -65,6 +65,32 @@ const Balance = () => {
     }
   };
 
+  const withDrawHandler = (e, token) => {
+    e.preventDefault();
+
+    if (token.address === tokens[0].address) {
+      transferTokens(
+        provider,
+        exchange,
+        "Withdraw",
+        token,
+        token1TransferAmount,
+        dispatch
+      );
+      setToken1TransferAmount(0);
+    } else {
+      transferTokens(
+        provider,
+        exchange,
+        "Withdraw",
+        token,
+        token2TransferAmount,
+        dispatch
+      );
+      setToken2TransferAmount(0);
+    }
+  };
+
   const depositRef = useRef(null);
   const withdrawRef = useRef(null);
 
@@ -127,7 +153,13 @@ const Balance = () => {
           </p>
         </div>
 
-        <form onSubmit={(e) => depositHandler(e, tokens[0])}>
+        <form
+          onSubmit={
+            isDeposit
+              ? (e) => depositHandler(e, tokens[0])
+              : (e) => withDrawHandler(e, tokens[0])
+          }
+        >
           <label htmlFor="token0"></label>
           <input
             type="text"
@@ -169,7 +201,13 @@ const Balance = () => {
           </p>
         </div>
 
-        <form onSubmit={(e) => depositHandler(e, tokens[1])}>
+        <form
+          onSubmit={
+            isDeposit
+              ? (e) => depositHandler(e, tokens[1])
+              : (e) => withDrawHandler(e, tokens[1])
+          }
+        >
           <label htmlFor="token1"></label>
           <input
             type="text"
