@@ -37,11 +37,11 @@ export const loadTokens = async (provider, addresses, dispatch) => {
 
   token = new ethers.Contract(addresses[0], TOKEN_ABI, provider);
   symbol = await token.symbol();
-  dispatch({ type: "TOKEN_LOADED_1", token, symbol });
+  dispatch({ type: "TOKEN_1_LOADED", token, symbol });
 
   token = new ethers.Contract(addresses[1], TOKEN_ABI, provider);
   symbol = await token.symbol();
-  dispatch({ type: "TOKEN_LOADED_2", token, symbol });
+  dispatch({ type: "TOKEN_2_LOADED", token, symbol });
 
   return token;
 };
@@ -106,6 +106,31 @@ export const loadBalances = async (exchange, tokens, account, dispatch) => {
     18
   );
   dispatch({ type: "EXCHANGE_TOKEN_2_BALANCE_LOADED", balance });
+};
+
+// ========================================================
+// Load all orders
+
+export const loadAllOrders = async (provider, exchange, dispatch) => {
+  const block = await provider.getBlockNumber();
+
+  // Fetch canceled orders
+  const cancelStream = await exchange.queryFilter("Cancel", 0, block);
+  const cancelledOrders = cancelStream.map((event) => event.args);
+
+  dispatch({ type: "CANCELLED_ORDERS_LOADED", cancelledOrders });
+
+  // Fetch filled orders
+  const tradeStream = await exchange.queryFilter("Trade", 0, block);
+  const filledOrders = tradeStream.map((event) => event.args);
+
+  dispatch({ type: "FILLED_ORDERS_LOADED", filledOrders });
+
+  // fetch all orders
+  const orderStream = await exchange.queryFilter("Order", 0, block);
+  const allOrders = orderStream.map((event) => event.args);
+
+  dispatch({ type: "ALL_ORDERS_LOADED", allOrders });
 };
 
 // -------------------------------------------

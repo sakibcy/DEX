@@ -37,7 +37,7 @@ const DEFAULT_TOKENS_STATE = {
 
 export const tokens = (state = DEFAULT_TOKENS_STATE, action) => {
   switch (action.type) {
-    case "TOKEN_LOADED_1":
+    case "TOKEN_1_LOADED":
       return {
         ...state,
         loaded: true,
@@ -51,7 +51,7 @@ export const tokens = (state = DEFAULT_TOKENS_STATE, action) => {
         balances: [action.balance],
       };
 
-    case "TOKEN_LOADED_2":
+    case "TOKEN_2_LOADED":
       return {
         ...state,
         loaded: true,
@@ -90,6 +90,35 @@ export const exchange = (state = DEFAULT_EXCHANGE_STATE, action) => {
         ...state,
         loaded: true,
         contract: action.exchange,
+      };
+
+    // ================================================
+    //  Orders loaded (cancelled, filled & all)
+    case "CANCELLED_ORDERS_LOADED":
+      return {
+        ...state,
+        cancelledOrders: {
+          loaded: true,
+          data: action.cancelledOrders,
+        },
+      };
+
+    case "FILLED_ORDERS_LOADED":
+      return {
+        ...state,
+        filledOrders: {
+          loaded: true,
+          data: action.filledOrders,
+        },
+      };
+
+    case "ALL_ORDERS_LOADED":
+      return {
+        ...state,
+        allOrders: {
+          loaded: true,
+          data: action.allOrders,
+        },
       };
 
     // --------------------------------------
@@ -159,7 +188,7 @@ export const exchange = (state = DEFAULT_EXCHANGE_STATE, action) => {
     case "NEW_ORDER_SUCCESS":
       // Prevent duplicate orders
       index = state.allOrders.data.findIndex(
-        (order) => order.id === action.orderId
+        (order) => order.id.toString() === action.order.id.toString()
       );
 
       if (index === -1) {

@@ -4,6 +4,7 @@ import "./App.css";
 import { useDispatch } from "react-redux";
 import {
   loadAccount,
+  loadAllOrders,
   loadExchange,
   loadNetwork,
   loadProvider,
@@ -14,6 +15,7 @@ import Navbar from "./components/Navbar";
 import Markets from "./components/Markets";
 import Balance from "./components/Balance";
 import Order from "./components/Order";
+import OrderBook from "./components/OrderBook";
 
 function App() {
   const dispatch = useDispatch();
@@ -44,6 +46,9 @@ function App() {
     const Exchange = config[chainId].Exchange;
     const exchange = await loadExchange(provider, Exchange.address, dispatch);
 
+    // Fetch all orders: open, filled, cancelled
+    loadAllOrders(provider, exchange, dispatch);
+
     // Listen to events
     subscribeToEvents(exchange, dispatch);
   };
@@ -71,7 +76,7 @@ function App() {
 
           {/* Trades */}
 
-          {/* OrderBook */}
+          <OrderBook />
         </section>
       </main>
 
